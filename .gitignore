@@ -30,4 +30,14 @@ data/
 
 # Temp files
 *.tmp
-*.bat
+_build*.bat
+_build*.txt
+_install_*.bat
+_railway_*.bat
+deploy-github.bat
+
+# Deployment archives
+*.zip
+
+# Logs directory
+logs/
