@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - CODEBUDDY_API_KEY=${CODEBUDDY_API_KEY}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
