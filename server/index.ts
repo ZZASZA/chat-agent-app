@@ -5,7 +5,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { exec } from "child_process";
 import { promisify } from "util";
+import dotenv from "dotenv";
 import * as db from "./db.js";
+
+// 加载 .env 环境变量
+dotenv.config();
 
 const execAsync = promisify(exec);
 
@@ -29,6 +33,22 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// 是否为生产模式
+const isProduction = process.env.NODE_ENV === 'production';
+
+// CORS 配置（生产环境允许所有来源）
+if (isProduction) {
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+}
 
 // Middleware
 app.use(express.json());
@@ -690,16 +710,22 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// 在生产环境下提供前端静态文件
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
+// ============= 生产模式：静态文件服务 =============
+if (isProduction) {
+  const distPath = path.join(__dirname, '..', 'dist');
+  console.log(`[Production] Serving static files from: ${distPath}`);
 
-// SPA fallback: 所有非 API 请求返回 index.html
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+  // 静态资源（js、css、图片等）
+  app.use(express.static(distPath, {
+    maxAge: '1d',
+    etag: true,
+  }));
+
+  // SPA 路由回退：所有非 API 请求都返回 index.html
+  app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
-  }
-});
+  });
+}
 
 // 启动服务器
 app.listen(PORT, () => {
@@ -709,7 +735,8 @@ app.listen(PORT, () => {
 ║     ◉ API 服务器已启动                      ║
 ║                                            ║
 ║     地址: http://localhost:${PORT}            ║
-║     环境: ${process.env.NODE_ENV || 'development'}
+║     模式: ${isProduction ? '生产 (Production)' : '开发 (Development)'}${' '.repeat(Math.max(0, 20 - (isProduction ? 26 : 24)))}║
+║     数据存储: JSON (data/chat-data.json)    ║
 ║                                            ║
 ╚════════════════════════════════════════════╝
   `);
