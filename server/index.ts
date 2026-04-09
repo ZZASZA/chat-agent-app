@@ -690,6 +690,17 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// 在生产环境下提供前端静态文件
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+
+// SPA fallback: 所有非 API 请求返回 index.html
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(distPath, 'index.html'));
+  }
+});
+
 // 启动服务器
 app.listen(PORT, () => {
   console.log(`
@@ -698,7 +709,7 @@ app.listen(PORT, () => {
 ║     ◉ API 服务器已启动                      ║
 ║                                            ║
 ║     地址: http://localhost:${PORT}            ║
-║     数据库: SQLite (data/chat.db)          ║
+║     环境: ${process.env.NODE_ENV || 'development'}
 ║                                            ║
 ╚════════════════════════════════════════════╝
   `);
